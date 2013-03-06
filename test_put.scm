@@ -5,7 +5,7 @@
 (define fis (java.io.FileInputStream. f))
 (define (main target)
   (com.jcraft.jsch.JSch.setConfig "StrictHostKeyChecking" "no")
-        (.addIdentity j "/mnt/sdcard/new_rsa" "password")
+  (.addIdentity j "/mnt/sdcard/new_rsa" "password")
   (set! sess (.getSession j "alice" "192.168.2.3" 22))
   (.connect sess)
   (set! channel (.openChannel sess "sftp"))
