@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Vector;
 
 import jscheme.JScheme;
 import android.app.Activity;
@@ -53,7 +54,7 @@ public class MainActivity extends Activity {
           public void run() {
             try {
               // Load the file
-              putFile(filename);
+              poll("m1");
             } catch (Exception e) {
               tv.setText ("exception: " + e);
             }
@@ -65,6 +66,21 @@ public class MainActivity extends Activity {
     });
     ll.addView (loadB);
     setContentView (ll);
+
+    Thread t = new Thread(new Runnable() {
+      public void run() {
+        try {
+          // Check for programs to run
+          poll("m1");
+        } catch (Exception e) {
+          tv.setText ("exception: " + e);
+        }
+        // Call the main method and pass text View for printing message
+        //js.call ("main", tv);
+      }
+    }) ;
+    t.start();
+
 
   }
 
@@ -90,6 +106,7 @@ public class MainActivity extends Activity {
 
       final ChannelSftp channel = (ChannelSftp) session.openChannel("sftp") ;
       channel.connect();
+
 
       InputStream in = channel.get(schemeFile);
       Object result = js.load (new java.io.BufferedReader (new InputStreamReader(in)));
@@ -149,6 +166,54 @@ public class MainActivity extends Activity {
     Session session = jsch.getSession(username, hostname, port);
     session.connect();
     return session;
+
+  }
+
+  private void poll(String machineName) {
+    int i= 0;
+    try {
+      while(!Thread.currentThread().isInterrupted() && i < 1) {
+        Thread.sleep(3000);
+        Session session = getSession();
+
+        final ChannelSftp channel = (ChannelSftp) session.openChannel("sftp") ;
+        channel.connect();
+        System.out.println("Listing Directory") ;
+        Vector v = channel.ls("/home/ubuntu/" + machineName);
+        for (Object o : v) {
+          String text;
+          if (o instanceof com.jcraft.jsch.ChannelSftp.LsEntry) {
+            text = ((com.jcraft.jsch.ChannelSftp.LsEntry) o).getFilename();
+          } else {
+            text = o.toString ();
+          }
+          System.out.println(text);
+          if (text.contains(".scm")) {
+            final JScheme js = new JScheme();
+            InputStream in = channel.get(machineName + "/" + text);
+            Object result = js.load (new java.io.BufferedReader (new InputStreamReader(in)));
+            TextView tv = new TextView (this);
+            //   
+            ResultHolder rh = new ResultHolder("test");
+            js.call("main", rh);
+            Log.e ("CSP", rh.getResult());
+            String returnFile = "(define (main tv)(.setText tv \"" + rh.getResult() + "\"))" ;
+            ByteArrayInputStream bais = new ByteArrayInputStream (returnFile.getBytes("us-ascii"));
+            channel.put(bais, text.split("\\.")[0] + "_resp.scm", ChannelSftp.OVERWRITE);
+          }
+        }
+        // Only try to update the file if the two args are passed
+        //ByteArrayInputStream bais = new ByteArrayInputStream ("file.txt".getBytes("us-ascii"));
+        i++;
+
+        channel.disconnect ();
+        session.disconnect ();
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    } finally {
+
+    }
 
   }
 }
