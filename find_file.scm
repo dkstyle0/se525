@@ -7,6 +7,7 @@
 
 (define (main target tv myfile)
 (let ((f (java.io.File. target)))
+(if (not(.equals (.getName f) ".android_secure"))
 (if (.isDirectory f)
     (begin (if (> (.size (java.util.ArrayList. (java.util.Arrays.asList(.list f)))) 0)
             (begin
@@ -16,4 +17,9 @@
             (if (> (.size alist) 0)
             (listProcessor alist tv myfile))))))
     (begin (if (.equals myfile (.getName f))
-               (.setText tv myfile))))))
+               (.setText tv  myfile))))))
+
+(if (.equals (.getText tv) "")
+   (.setText tv "not found")))
+
+
