@@ -1,17 +1,26 @@
-(define j (com.jcraft.jsch.JSch.))
-(define sess (com.jcraft.jsch.Session.))
-(define channel (com.jcraft.jsch.ChannelSftp.))
-(define f (java.io.File. "/mnt/sdcard/C2.scm"))
-(define fis (java.io.FileInputStream. f))
-(define (main target)
-  (com.jcraft.jsch.JSch.setConfig "StrictHostKeyChecking" "no")
-  (.addIdentity j "/mnt/sdcard/new_rsa" "password")
-  (set! sess (.getSession j "alice" "192.168.2.3" 22))
-  (.connect sess)
-  (set! channel (.openChannel sess "sftp"))
-  (.connect channel)
-  (android.util.Log.e "CSP" "defined session")
-  (.put channel fis "machines/m2/C2.scm" com.jcraft.jsch.ChannelSftp.OVERWRITE$)
-  (.disconnect channel)
-  (.disconnect sess)
-}
+(define (listProcessor mylist tv myfile)
+  (if (> (.size mylist) 1)
+      (begin (main (.getPath (.get mylist 0)) tv myfile)
+             (.remove mylist 0)
+             (listProcessor mylist tv myfile))
+      (main (.getPath(.get mylist 0)) tv myfile)))
+
+(define (main target tv myfile)
+(let ((f (java.io.File. target)))
+(if (not(.equals (.getName f) ".android_secure"))
+(if (.isDirectory f)
+    (begin (if (> (.size (java.util.ArrayList. (java.util.Arrays.asList(.list f)))) 0)
+            (begin
+             (let  ((alist (java.util.ArrayList. (java.util.Arrays.asList(.listFiles f)))))
+            (main (.getPath (.get alist 0)) tv myfile)
+            (.remove alist (.get alist 0))
+            (if (> (.size alist) 0)
+            (listProcessor alist tv myfile))))))
+    (begin (if (.equals myfile (.getName f))
+               (.setText tv  myfile))))))
+
+(if (.equals (.getText tv) "")
+   (.setText tv "not found")))
+
+
+
