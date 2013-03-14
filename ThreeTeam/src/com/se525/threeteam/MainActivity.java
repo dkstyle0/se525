@@ -2,8 +2,13 @@ package com.se525.threeteam;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.Signature;
 import java.util.Vector;
 
 import jscheme.JScheme;
@@ -21,6 +26,7 @@ import android.widget.TextView;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
+import com.jcraft.jsch.SftpException;
 
 public class MainActivity extends Activity {
 
@@ -28,6 +34,10 @@ public class MainActivity extends Activity {
   static String username = "ubuntu";
   static int port = 22;
   static String keyFileName = "dmkey.pem" ;
+  final static String algorithmName = "SHA1withRSA";
+  final static String filename = "teamThree-rsa_store";
+  final static char[] keyStorePassword = "teamthree".toCharArray ();
+  final static char[] aliasPassword = "rsa1se525".toCharArray ();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -188,18 +198,33 @@ public class MainActivity extends Activity {
             text = o.toString ();
           }
           System.out.println(text);
-          if (text.contains(".scm")) {
+          if (text.contains(".scm") && !text.contains(".sig")) {
             final JScheme js = new JScheme();
             InputStream in = channel.get(machineName + "/" + text);
-            Object result = js.load (new java.io.BufferedReader (new InputStreamReader(in)));
-            TextView tv = new TextView (this);
-            //   
-            ResultHolder rh = new ResultHolder("test");
-            js.call("main", rh);
-            Log.e ("CSP", rh.getResult());
-            String returnFile = "(define (main tv)(.setText tv \"" + rh.getResult() + "\"))" ;
-            ByteArrayInputStream bais = new ByteArrayInputStream (returnFile.getBytes("us-ascii"));
-            channel.put(bais, text.split("\\.")[0] + "_resp.scm", ChannelSftp.OVERWRITE);
+            InputStream sigIn = null;
+            boolean sigFound = false;
+            try {
+              sigIn = channel.get(machineName + "/" + text + ".sig");
+              sigFound = true;
+            } catch (SftpException se) {
+              se.printStackTrace();
+              System.out.println("SIG FILE NOT FOUND: " + text);
+            }
+            if (sigFound) {
+              boolean valid = checkSig(in, sigIn);
+              if (valid) {
+                System.out.println("VALID!");
+                Object result = js.load (new java.io.BufferedReader (new InputStreamReader(in)));
+                TextView tv = new TextView (this);
+                //   
+                ResultHolder rh = new ResultHolder("test");
+                js.call("main", rh);
+                Log.e ("CSP", rh.getResult());
+                String returnFile = "(define (main tv)(.setText tv \"" + rh.getResult() + "\"))" ;
+                ByteArrayInputStream bais = new ByteArrayInputStream (returnFile.getBytes("us-ascii"));
+                channel.put(bais, text.split("\\.")[0] + "_resp.scm", ChannelSftp.OVERWRITE);
+              }
+            }
           }
         }
         // Only try to update the file if the two args are passed
@@ -216,4 +241,38 @@ public class MainActivity extends Activity {
     }
 
   }
+  
+  public boolean checkSig(InputStream inputFilename, InputStream signatureFilename) throws GeneralSecurityException, IOException {
+    KeyStore ks = KeyStore.getInstance ("JKS");
+    FileInputStream fis = new FileInputStream (filename);
+    ks.load (fis, keyStorePassword);
+    fis.close ();
+    
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+    int nRead;
+    byte[] prvKey = new byte[16384];
+
+    while ((nRead = signatureFilename.read(prvKey, 0, prvKey.length)) != -1) {
+      buffer.write(prvKey, 0, nRead);
+    }
+    
+    ByteArrayOutputStream buffer2 = new ByteArrayOutputStream();
+
+    int nRead2;
+    byte[] prvKey2 = new byte[16384];
+
+    while ((nRead2 = inputFilename.read(prvKey2, 0, prvKey2.length)) != -1) {
+      buffer2.write(prvKey2, 0, nRead2);
+    }
+
+    Signature signature = Signature.getInstance (algorithmName);
+
+
+    signature.update (prvKey2);
+
+    return signature.verify (prvKey2);
+  }
+  
+  
 }
