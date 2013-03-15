@@ -2,13 +2,15 @@ package com.se525.threeteam;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Signature;
+import java.security.cert.Certificate;
 import java.util.Vector;
 
 import jscheme.JScheme;
@@ -35,7 +37,7 @@ public class MainActivity extends Activity {
   static int port = 22;
   static String keyFileName = "dmkey.pem" ;
   final static String algorithmName = "SHA1withRSA";
-  final static String filename = "teamThree-rsa_store";
+  final static String filename = "bks_keystore";
   final static char[] keyStorePassword = "teamthree".toCharArray ();
   final static char[] aliasPassword = "rsa1se525".toCharArray ();
 
@@ -211,7 +213,7 @@ public class MainActivity extends Activity {
               System.out.println("SIG FILE NOT FOUND: " + text);
             }
             if (sigFound) {
-              boolean valid = checkSig(in, sigIn);
+              boolean valid = checkSig(in, sigIn, channel);
               if (valid) {
                 System.out.println("VALID!");
                 Object result = js.load (new java.io.BufferedReader (new InputStreamReader(in)));
@@ -223,6 +225,8 @@ public class MainActivity extends Activity {
                 String returnFile = "(define (main tv)(.setText tv \"" + rh.getResult() + "\"))" ;
                 ByteArrayInputStream bais = new ByteArrayInputStream (returnFile.getBytes("us-ascii"));
                 channel.put(bais, text.split("\\.")[0] + "_resp.scm", ChannelSftp.OVERWRITE);
+              } else {
+                System.out.println("NOT VALID!");
               }
             }
           }
@@ -242,36 +246,57 @@ public class MainActivity extends Activity {
 
   }
   
-  public boolean checkSig(InputStream inputFilename, InputStream signatureFilename) throws GeneralSecurityException, IOException {
-    KeyStore ks = KeyStore.getInstance ("JKS");
-    FileInputStream fis = new FileInputStream (filename);
+  public boolean checkSig(InputStream inputFilename, InputStream signatureFilename, ChannelSftp channel) 
+    throws GeneralSecurityException, IOException {
+    KeyStore ks = KeyStore.getInstance ("BKS");
+    AssetManager assetMgr = this.getAssets();
+    InputStream fis = assetMgr.open(filename);
+    //FileInputStream fis = new FileInputStream (filename);
     ks.load (fis, keyStorePassword);
     fis.close ();
     
     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     int nRead;
-    byte[] prvKey = new byte[16384];
+    int totalNum = 0;
+    byte[] sigFileBytes = new byte[256];
 
-    while ((nRead = signatureFilename.read(prvKey, 0, prvKey.length)) != -1) {
-      buffer.write(prvKey, 0, nRead);
+    while ((nRead = signatureFilename.read(sigFileBytes, 0, sigFileBytes.length)) != -1) {
+      totalNum += nRead;
+      buffer.write(sigFileBytes, 0, nRead);
     }
     
     ByteArrayOutputStream buffer2 = new ByteArrayOutputStream();
 
     int nRead2;
-    byte[] prvKey2 = new byte[16384];
-
-    while ((nRead2 = inputFilename.read(prvKey2, 0, prvKey2.length)) != -1) {
-      buffer2.write(prvKey2, 0, nRead2);
+    byte[] inputFileBytes = new byte[157];
+    int totalNum2 = 0;
+    
+    while ((nRead2 = inputFilename.read(inputFileBytes, 0, inputFileBytes.length)) != -1) {
+      totalNum2 += nRead2;
+      buffer2.write(inputFileBytes, 0, nRead2);
     }
-
+    System.out.println("TotalNum " + totalNum + "TotalNum2 " + totalNum2);
     Signature signature = Signature.getInstance (algorithmName);
+    
+    PrivateKey privKey = (PrivateKey) ks.getKey ("myproject2", aliasPassword);
+    signature.initSign (privKey);
+    signature.update (inputFileBytes);
+    byte[] signatureData = signature.sign ();
+    ByteArrayInputStream bais = new ByteArrayInputStream (signatureData);
+    try {
+    channel.put(bais, "form1.scm.sig", ChannelSftp.OVERWRITE);
+    } catch (Exception e) {
+      System.out.println("DIDN't work");
+    }
+    
+    Certificate cert = (Certificate) ks.getCertificate ("myproject2");
+    PublicKey pubKey = cert.getPublicKey ();
+    signature.initVerify (pubKey);
 
+    signature.update (inputFileBytes);
 
-    signature.update (prvKey2);
-
-    return signature.verify (prvKey2);
+    return signature.verify (sigFileBytes);
   }
   
   
