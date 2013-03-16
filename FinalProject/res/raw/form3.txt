@@ -1,0 +1,4 @@
+m1!(define (main result, machine)
+  (.setResult result "A NEW STRING")
+  (.setMachine machine "m2")
+)
