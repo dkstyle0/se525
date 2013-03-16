@@ -102,9 +102,15 @@ public class MainActivity extends Activity {
 
   }
 
+  /**
+   * 
+   * @param js
+   * @param schemeFile
+   * @return
+   */
   public Object getFile(JScheme js, String schemeFile) {
     try {
-      JSch jsch = new JSch() ;
+      /*JSch jsch = new JSch() ;
       JSch.setConfig("StrictHostKeyChecking" , "no");
       AssetManager assetMgr = this.getAssets();
       InputStream fis = assetMgr.open(keyFileName);
@@ -120,7 +126,8 @@ public class MainActivity extends Activity {
 
       jsch.addIdentity (keyFileName,  prvKey, new byte[0], new byte[0]);
       Session session = jsch.getSession(username, hostname, port);
-      session.connect();
+      session.connect();*/
+      Session session = getSession();
 
       final ChannelSftp channel = (ChannelSftp) session.openChannel("sftp") ;
       channel.connect();
@@ -137,6 +144,10 @@ public class MainActivity extends Activity {
     }
   }
 
+  /**
+   * 
+   * @param filename
+   */
   public void putFile(String filename) {
     try {
       Session session = getSession();
@@ -152,6 +163,7 @@ public class MainActivity extends Activity {
       channel.disconnect ();
       session.disconnect ();
     } catch (Exception e) {
+      //Don TODO Ask group if I should refine generic Exception catches
       e.printStackTrace();
     } finally {
 
@@ -164,7 +176,18 @@ public class MainActivity extends Activity {
     getMenuInflater().inflate(R.menu.activity_main, menu);
     return true;
   }
-
+  
+  /**
+   * Generates session for connecting to task server.
+   * Creates session with asymmetric key exchange and
+   * Strict Host Key Checking turned off.
+   * 
+   * @return session used to SSH to task server
+   * @throws IOException
+   * @throws IndexOutOfBoundsException
+   * @throws NullPointerException
+   * @throws JSchException
+   */
   private Session getSession() throws Exception {
     JSch jsch = new JSch() ;
     JSch.setConfig("StrictHostKeyChecking" , "no");
@@ -187,6 +210,12 @@ public class MainActivity extends Activity {
 
   }
 
+  /**
+   * Polls task server for new tasks.
+   * Only accepts tasks if there is a corresponding .sig file.
+   * 
+   * @param machineName Directory to check for new jobs
+   */
   private void poll(String machineName) {
     int i= 0;
     try {
@@ -252,6 +281,18 @@ public class MainActivity extends Activity {
 
   }
   
+  /**
+   * 
+   * Loads the file and its signature, signs the file and
+   * checks that it matches the stored signature.
+   * 
+   * @param inputFilename InputStream of file to check against Signature
+   * @param signatureFilename InputStream of Signature file
+   * @param channel ChannelSftp
+   * @return true if signatures match
+   * @throws GeneralSecurityException
+   * @throws IOException
+   */
   public boolean checkSig(InputStream inputFilename, InputStream signatureFilename, ChannelSftp channel) 
     throws GeneralSecurityException, IOException {
     KeyStore ks = KeyStore.getInstance ("BKS");
@@ -291,7 +332,7 @@ public class MainActivity extends Activity {
     byte[] signatureData = signature.sign ();
     ByteArrayInputStream bais = new ByteArrayInputStream (signatureData);
     try {
-    channel.put(bais, "form1.scm.sig", ChannelSftp.OVERWRITE);
+      channel.put(bais, "form1.scm.sig", ChannelSftp.OVERWRITE);
     } catch (Exception e) {
       System.out.println("DIDN't work");
     }
