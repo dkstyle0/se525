@@ -1,3 +1,9 @@
+/*
+ * Group Project
+ * David Kuhn, Colleen Patin, Donald Bartoli
+ *
+ */
+
 package com.se525.threeteam;
 
 import java.io.ByteArrayInputStream;
