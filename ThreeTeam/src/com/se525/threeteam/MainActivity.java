@@ -103,14 +103,19 @@ public class MainActivity extends Activity {
   }
 
   /**
+   * Loads the remote scheme file into a JScheme object.
    * 
    * @param js
    * @param schemeFile
-   * @return
+   * @return JScheme Object
    */
   public Object getFile(JScheme js, String schemeFile) {
     try {
-      /*JSch jsch = new JSch() ;
+      /* This Block of code seemed Redundant after getSession was
+       * written, so I commented it out and replaced it with a call
+       * to getSession, if this assumption was correct I can remove
+       * this block of code.  ~Donald Bartoli 
+      JSch jsch = new JSch() ;
       JSch.setConfig("StrictHostKeyChecking" , "no");
       AssetManager assetMgr = this.getAssets();
       InputStream fis = assetMgr.open(keyFileName);
@@ -145,6 +150,8 @@ public class MainActivity extends Activity {
   }
 
   /**
+   * I'm guessing this method is meant to be called
+   * from the scheme code, Correct me if I'm wrong.
    * 
    * @param filename
    */
@@ -163,7 +170,7 @@ public class MainActivity extends Activity {
       channel.disconnect ();
       session.disconnect ();
     } catch (Exception e) {
-      //Don TODO Ask group if I should refine generic Exception catches
+      //TODO Ask group if I should refine generic Exception catches. ~Don
       e.printStackTrace();
     } finally {
 
@@ -282,7 +289,6 @@ public class MainActivity extends Activity {
   }
   
   /**
-   * 
    * Loads the file and its signature, signs the file and
    * checks that it matches the stored signature.
    * 
@@ -290,8 +296,6 @@ public class MainActivity extends Activity {
    * @param signatureFilename InputStream of Signature file
    * @param channel ChannelSftp
    * @return true if signatures match
-   * @throws GeneralSecurityException
-   * @throws IOException
    */
   public boolean checkSig(InputStream inputFilename, InputStream signatureFilename, ChannelSftp channel) 
     throws GeneralSecurityException, IOException {
