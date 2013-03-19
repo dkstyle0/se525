@@ -24,6 +24,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 
 import jscheme.JScheme;
+import jsint.JavaMethod;
 import android.app.Activity;
 import android.content.res.AssetManager;
 import android.os.Bundle;
@@ -57,6 +58,7 @@ public class MainActivity extends Activity {
 
     // Jscheme instance to be used by all methods
     final JScheme js = new JScheme();
+    JavaMethod.setPerms("none");
 
     // Create layout
     LinearLayout ll = new LinearLayout(this);
