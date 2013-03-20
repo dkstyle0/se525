@@ -20,6 +20,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.Certificate;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -38,6 +39,7 @@ import android.widget.TextView;
 
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 
@@ -51,13 +53,15 @@ public class MainActivity extends Activity {
   final static String filename = "bks_keystore";
   final static char[] keyStorePassword = "teamthree".toCharArray ();
   final static char[] aliasPassword = "rsa1se525".toCharArray ();
+  private HashMap<String, String> keyPolicies = new HashMap<String, String>();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-
+    
+    readPolicyFile();
+    
     // Jscheme instance to be used by all methods
-    final JScheme js = new JScheme();
     JavaMethod.setPerms("none");
 
     // Create layout
@@ -334,7 +338,7 @@ public class MainActivity extends Activity {
               boolean valid = checkSig(in, sigIn, channel, target_machine);
               if (valid) {
                 System.out.println("VALID!");
-
+                JavaMethod.setPerms(keyPolicies.get(target_machine));
 
                 js.load (scm_file);
                 //TextView tv = new TextView (this);
@@ -436,6 +440,34 @@ public class MainActivity extends Activity {
     signature.update (inputFileBytes);
 
     return signature.verify (sigFileBytes);
+  }
+  
+  private void readPolicyFile() {
+    AssetManager assetMgr = this.getAssets();
+    try {
+      InputStream fis = assetMgr.open("keyPolicies.txt");
+      InputStreamReader isr = new InputStreamReader(fis);
+      StringBuilder sb=new StringBuilder();
+      BufferedReader br = new BufferedReader(isr);
+      String read = br.readLine();
+
+      while(read != null) {
+        //System.out.println(read);
+        sb.append(read);
+        System.out.println(read);
+        StringTokenizer tokenizer = new StringTokenizer(read, ";");
+        String target_machine = tokenizer.nextToken().toString();
+        String permission = tokenizer.nextToken().toString();
+        keyPolicies.put(target_machine, permission);
+        read = br.readLine();
+
+      }
+      
+      
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
 
 
