@@ -1,7 +1,8 @@
 /*
  * Group Project
  * David Kuhn, Colleen Patin, Donald Bartoli
- *
+ * Exploring the consiquences of executing code
+ * from potentially untrusted sources.
  */
 
 package com.se525.threeteam;
@@ -133,17 +134,17 @@ public class MainActivity extends Activity {
     t.start();
   }
   
-  /**
-   * Loads the remote scheme file into a JScheme object.
-   * 
-   * @param js
-   * @param schemeFile
-   * @return JScheme Object
-   */
   public void createFile() {
 
   }
 
+  /*****************************************************\
+  * Loads the remote scheme file into a JScheme object. *
+  *                                                     *
+  * @param js                                           *
+  * @param schemeFile                                   *
+  * @return JScheme Object                              *
+  \*****************************************************/
   public Object getFile(JScheme js, String schemeFile) {
     try {
       Session session = getSession();
@@ -164,10 +165,7 @@ public class MainActivity extends Activity {
     }
   }
   
-  /**
-   * I'm guessing this method is meant to be called
-   * from the scheme code, Correct me if I'm wrong.
-   * 
+  /** 
    * @param filename
    */
   public void sendText(String filename){
@@ -199,6 +197,9 @@ public class MainActivity extends Activity {
 
   }
 
+  /**
+   *@param filename
+   */
   public void putFile(String filename) {
     try {
       Session session = getSession();
@@ -220,6 +221,9 @@ public class MainActivity extends Activity {
     }
   }
 
+  /**
+   * @param filetext
+   */
   public  void putString(String filetext){
     try {
       Session session = getSession();
@@ -244,17 +248,17 @@ public class MainActivity extends Activity {
 
   }
   
-  /**
-   * Generates session for connecting to task server.
-   * Creates session with asymmetric key exchange and
-   * Strict Host Key Checking turned off.
-   * 
-   * @return session used to SSH to task server
-   * @throws IOException
-   * @throws IndexOutOfBoundsException
-   * @throws NullPointerException
-   * @throws JSchException
-   */
+  /**************************************************\
+  * Generates session for connecting to task server. *
+  * Creates session with asymmetric key exchange and *
+  * Strict Host Key Checking turned off.             *
+  *                                                  *
+  * @return session used to SSH to task server       *
+  * @throws IOException                              *
+  * @throws IndexOutOfBoundsException                *
+  * @throws NullPointerException                     *
+  * @throws JSchException                            *
+  \**************************************************/
   private Session getSession() throws Exception {
     JSch jsch = new JSch() ;
     JSch.setConfig("StrictHostKeyChecking" , "no");
@@ -277,12 +281,12 @@ public class MainActivity extends Activity {
 
   }
   
-  /**
-   * Polls task server for new tasks.
-   * Only accepts tasks if there is a corresponding .sig file.
-   * 
-   * @param machineName Directory to check for new jobs
-   */
+  /***********************************************************\
+  * Polls task server for new tasks.                          *
+  * Only accepts tasks if there is a corresponding .sig file. *
+  *                                                           *
+  * @param machineName Directory to check for new jobs        *
+  \***********************************************************/
   private void poll(String machineName) {
     int i= 0;
     try {
@@ -384,15 +388,15 @@ public class MainActivity extends Activity {
   }
 
 
-  /**
-   * Loads the file and its signature, signs the file and
-   * checks that it matches the stored signature.
-   * 
-   * @param inputFilename InputStream of file to check against Signature
-   * @param signatureFilename InputStream of Signature file
-   * @param channel ChannelSftp
-   * @return true if signatures match
-   */
+  /*********************************************************************\
+  * Loads the file and its signature, signs the file and checks that it *
+  * matches the stored signature.                                       *
+  *                                                                     *
+  * @param inputFilename InputStream of file to check against Signature *
+  * @param signatureFilename InputStream of Signature file              *
+  * @param channel ChannelSftp                                          *
+  * @return true if signatures match                                    *
+  \*********************************************************************/
   public boolean checkSig(InputStream inputFilename, InputStream signatureFilename, ChannelSftp channel, String publicAlias) 
   throws GeneralSecurityException, IOException {
     KeyStore ks = KeyStore.getInstance ("BKS");
