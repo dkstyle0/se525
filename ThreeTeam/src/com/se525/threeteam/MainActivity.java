@@ -90,7 +90,7 @@ public class MainActivity extends Activity {
           public void run() {
             try {
               // Load the file
-              poll("m2");
+              poll("m1");
             } catch (Exception e) {
               tv.setText ("exception: " + e);
             }
@@ -124,7 +124,7 @@ public class MainActivity extends Activity {
       public void run() {
         try {
           // Check for programs to run
-          poll("m2");
+          poll("m1");
         } catch (Exception e) {
           tv.setText ("exception: " + e);
         }
@@ -319,10 +319,14 @@ public class MainActivity extends Activity {
             result = sb.toString();
             System.out.println(result);
 
-            StringTokenizer tokenizer = new StringTokenizer(result, "!");
-            String target_machine = tokenizer.nextToken().toString();
+            String[] tokens = result.split("!");
+            String target_machine = tokens[0];
             System.out.println(target_machine);
-            String scm_file  = (tokenizer.nextToken()).toString().trim();
+            String scm_file  = tokens[1];
+            for (int j = 2; j<tokens.length; j++) {
+              scm_file +=  "!";
+              scm_file +=  tokens[j];
+            }
             System.out.println(scm_file);
             InputStream sigIn = null;
 
@@ -339,7 +343,8 @@ public class MainActivity extends Activity {
               if (valid) {
                 System.out.println("VALID!");
                 JavaMethod.setPerms(keyPolicies.get(target_machine));
-
+                System.out.println(keyPolicies.get(target_machine));
+                
                 js.load (scm_file);
                 //TextView tv = new TextView (this);
                 //   
