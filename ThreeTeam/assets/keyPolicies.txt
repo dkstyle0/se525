@@ -1,3 +1,3 @@
-m1;internet
+m1;all
 m2;none
 m3;none
