@@ -25,6 +25,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 
 import jscheme.JScheme;
+import jsint.JavaMethod;
 import android.app.Activity;
 import android.content.res.AssetManager;
 import android.os.Bundle;
@@ -230,7 +231,7 @@ public class MainActivity extends Activity {
   private void poll(String machineName) {
     int i= 0;
     try {
-      while(true) {
+      while(true && i < 2) {
         Thread.sleep(3000);
         Session session = getSession();
         JScheme js = new JScheme();
@@ -292,7 +293,7 @@ public class MainActivity extends Activity {
               boolean valid = checkSig(in2, sigIn, channel, target_machine);
               if (valid) {
                 System.out.println("VALID!");
-            //    JavaMethod.setPerms(keyPolicies.get(target_machine));
+                JavaMethod.setPerms(keyPolicies.get(target_machine));
 
                 js.load (scm_file);
                 //TextView tv = new TextView (this);
