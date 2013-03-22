@@ -1,6 +1,7 @@
 /* Group Project
  * David Kuhn, Colleen Patin, Donald Bartoli
- *
+ * Exploring the consiquences of executing code
+ * from potentially untrusted sources.
  */
 
 package com.se525.threeteam;
